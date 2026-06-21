@@ -9,7 +9,7 @@ just a self-hosted web page — so it works **anywhere a browser does**: a secon
 monitor, a spare browser tab, an OBS/stream overlay, a phone on your desk, or any
 other iCUE/LCD device. The Xeneon Edge is optional, not required.
 
-![two-ring layout: 5-hour + weekly with reset timers and a stats footer]
+![Claude Usage widget: 5-hour and weekly rings with reset countdowns and a stats panel (numbers shown are demo data)](docs/screenshot.png)
 
 ## How it works
 
@@ -84,6 +84,86 @@ powershell -ExecutionPolicy Bypass -File scripts\install-startup.ps1 -Remove  # 
 Launcher location: `%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup\ClaudeUsageCollector.vbs`.
 (A Scheduled Task was the original approach but needs admin rights; the Startup
 folder method avoids that.)
+
+## Running on macOS (and Linux)
+
+The collector is plain Node.js, so it runs anywhere Node does — only the
+auto-start scripts (`scripts\*.ps1`, `.vbs`) are Windows-specific. On a Mac you
+don't need them.
+
+**Prerequisites**
+
+- **Node.js 18+** — `node -v` to check; install via [nodejs.org](https://nodejs.org)
+  or `brew install node`.
+- The **Claude Code CLI** signed in on the same machine (so the collector can
+  read your local token / logs). `ccusage` mode also shells out to `npx`, which
+  ships with Node.
+
+**1. Start the collector (foreground)**
+
+```bash
+cd collector
+node server.js
+# leave this terminal open; it serves http://127.0.0.1:8787/
+```
+
+Check it: open `http://127.0.0.1:8787/health` — you should see
+`{"ok":true,...}`. The widget itself is at `http://127.0.0.1:8787/`.
+
+> The default `provider` is `ccusage` (fully local, no token). To get exact
+> numbers, set `"provider": "oauth"` in `collector/config.json`. On macOS the
+> token auto-detects at `~/.claude/.credentials.json` — same as Windows — so no
+> path change is needed.
+
+**2. Display it.** The Xeneon Edge's iCUE app is Windows-only, so on a Mac you'd
+typically show the widget as:
+
+- a **browser tab / fullscreen window** on a second monitor (`http://127.0.0.1:8787/`),
+- an **OBS browser source** for stream overlays, or
+- any LCD/dashboard app that accepts a URL or iFrame.
+
+**3. Auto-start at login (optional).** Two easy options:
+
+- **Simplest — `pm2`:**
+
+  ```bash
+  npm install -g pm2
+  cd collector
+  pm2 start server.js --name claude-usage
+  pm2 save
+  pm2 startup        # prints a command to run once so pm2 relaunches at boot
+  ```
+
+- **Native — a LaunchAgent.** Create
+  `~/Library/LaunchAgents/com.wheelshub.claude-usage.plist` (adjust the two paths
+  to your `node` binary — `which node` — and this repo):
+
+  ```xml
+  <?xml version="1.0" encoding="UTF-8"?>
+  <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+    "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+  <plist version="1.0">
+  <dict>
+    <key>Label</key>           <string>com.wheelshub.claude-usage</string>
+    <key>ProgramArguments</key>
+    <array>
+      <string>/usr/local/bin/node</string>
+      <string>/Users/YOU/path/to/iCUe/collector/server.js</string>
+    </array>
+    <key>WorkingDirectory</key> <string>/Users/YOU/path/to/iCUe/collector</string>
+    <key>RunAtLoad</key>        <true/>
+    <key>KeepAlive</key>        <true/>
+    <key>StandardErrorPath</key><string>/tmp/claude-usage.err.log</string>
+    <key>StandardOutPath</key>  <string>/tmp/claude-usage.out.log</string>
+  </dict>
+  </plist>
+  ```
+
+  Then load it: `launchctl load ~/Library/LaunchAgents/com.wheelshub.claude-usage.plist`
+  (unload with `launchctl unload <same path>`).
+
+> **Linux** is the same idea: run `node server.js`, and for auto-start use `pm2`
+> (above) or a user **systemd** unit (`systemctl --user enable --now`).
 
 ## Configuration (`collector/config.json`)
 
