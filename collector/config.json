@@ -1,0 +1,29 @@
+{
+  "provider": "oauth",
+  "_provider_help": "\"ccusage\" = fully local & official-safe (estimates vs limits). \"oauth\" = exact 5h/weekly % from Anthropic's /api/oauth/usage (undocumented, sends a claude-code User-Agent).",
+
+  "port": 8787,
+  "refreshSeconds": 180,
+  "_refreshSeconds_help": "Keep >=180 when provider=oauth to avoid the rate-limited 429 bucket.",
+
+  "plan": {
+    "name": "Max 20x",
+    "blockTokenLimit": null,
+    "weeklyTokenBudget": null
+  },
+  "_plan_help": "blockTokenLimit/weeklyTokenBudget let ccusage mode show a % ring. Leave null to auto-use your largest previous 5h block as the 5h denominator; weekly ring then shows raw tokens with no %.",
+
+  "ccusage": {
+    "runner": "npx",
+    "runnerArgs": ["-y", "ccusage@latest"]
+  },
+
+  "oauth": {
+    "credentialsPath": "",
+    "tokenEnvVar": "CLAUDE_CODE_OAUTH_TOKEN",
+    "manualToken": "",
+    "userAgentVersion": "1.0.80",
+    "supplementWithCcusage": true,
+    "_help": "credentialsPath empty = auto-detect ~/.claude/.credentials.json. Token resolution order: manualToken > tokenEnvVar > credentials file."
+  }
+}

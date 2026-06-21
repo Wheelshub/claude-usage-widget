@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Claude Usage — Xeneon Edge Widget</title>
+<style>
+  :root {
+    --bg-0: #100d0b;
+    --bg-1: #16120f;
+    --bg-2: #1d1815;
+    --card: #1f1a16;
+    --card-2: #261f1a;
+    --edge: #352c25;
+    --edge-soft: #2a2320;
+    --text: #f4efe9;
+    --dim: #b3a698;
+    --dim-2: #8a7d70;
+    --accent: #d97757;
+    --accent-2: #e89b80;
+    --accent-glow: rgba(217, 119, 87, 0.35);
+    --ok: #6cae75;
+    --warn: #e2b35c;
+    --crit: #e0664f;
+    --mono: "SF Mono", "JetBrains Mono", "Cascadia Code", Consolas, monospace;
+    --sans: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+    --radius: 16px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; scroll-padding-top: 80px; }
+  body {
+    font-family: var(--sans);
+    color: var(--text);
+    background: var(--bg-0);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  a { color: var(--accent-2); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code, pre { font-family: var(--mono); font-size: 0.9em; }
+  ::selection { background: var(--accent-glow); }
+
+  /* layout */
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+  section { padding: 72px 0; border-top: 1px solid var(--edge-soft); }
+  section:first-of-type { border-top: none; }
+  .eyebrow {
+    font-size: 12px; letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--accent); font-weight: 700; margin-bottom: 14px;
+  }
+  h2 { font-size: clamp(26px, 4vw, 38px); line-height: 1.15; letter-spacing: -0.02em; margin-bottom: 14px; }
+  h3 { font-size: 18px; letter-spacing: -0.01em; margin-bottom: 8px; }
+  .lead { color: var(--dim); font-size: 17px; max-width: 62ch; }
+
+  /* nav */
+  nav {
+    position: sticky; top: 0; z-index: 50;
+    backdrop-filter: blur(14px);
+    background: rgba(16, 13, 11, 0.72);
+    border-bottom: 1px solid var(--edge-soft);
+  }
+  nav .wrap { display: flex; align-items: center; justify-content: space-between; height: 60px; }
+  .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: 0.04em; }
+  .logo .mark { width: 22px; height: 22px; }
+  .navlinks { display: flex; gap: 26px; font-size: 14px; color: var(--dim); }
+  .navlinks a { color: var(--dim); }
+  .navlinks a:hover { color: var(--text); text-decoration: none; }
+  @media (max-width: 720px) { .navlinks { display: none; } }
+
+  /* hero */
+  .hero { position: relative; padding: 90px 0 80px; overflow: hidden; }
+  .hero::before {
+    content: ""; position: absolute; inset: -200px -200px auto auto; width: 600px; height: 600px;
+    background: radial-gradient(circle, var(--accent-glow) 0%, transparent 60%);
+    filter: blur(20px); pointer-events: none;
+  }
+  .hero-grid { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 48px; align-items: center; position: relative; }
+  @media (max-width: 860px) { .hero-grid { grid-template-columns: 1fr; } }
+  .hero h1 { font-size: clamp(34px, 6vw, 58px); line-height: 1.05; letter-spacing: -0.03em; }
+  .hero h1 .grad {
+    background: linear-gradient(120deg, var(--accent) 0%, var(--accent-2) 60%, #f0c4af 100%);
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .hero p { color: var(--dim); font-size: 18px; margin: 20px 0 26px; max-width: 52ch; }
+  .badges { display: flex; flex-wrap: wrap; gap: 10px; }
+  .badge {
+    font-size: 12px; font-weight: 600; letter-spacing: 0.05em;
+    padding: 6px 12px; border-radius: 999px; border: 1px solid var(--edge);
+    background: var(--card); color: var(--dim);
+    display: inline-flex; align-items: center; gap: 7px;
+  }
+  .badge .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+  .badge.ok .dot { background: var(--ok); }
+  .badge.warn .dot { background: var(--warn); }
+
+  /* device mockup */
+  .device {
+    position: relative; border-radius: 22px; padding: 14px;
+    background: linear-gradient(180deg, #2a2420, #18130f);
+    border: 1px solid var(--edge);
+    box-shadow: 0 40px 80px -30px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.04);
+  }
+  .device .bezel {
+    border-radius: 12px; overflow: hidden; aspect-ratio: 32 / 9;
+    background:
+      radial-gradient(120% 160% at 0% 0%, #241d18 0%, #100d0b 60%);
+    border: 1px solid #000;
+    position: relative;
+    container-type: size;
+  }
+  .device .caption { text-align: center; color: var(--dim-2); font-size: 12px; margin-top: 12px; letter-spacing: 0.06em; }
+  .device .stand {
+    width: 38%; height: 10px; margin: 8px auto 0; border-radius: 0 0 8px 8px;
+    background: linear-gradient(180deg, #2a2420, #16120f); border: 1px solid var(--edge); border-top: none;
+  }
+
+  /* widget screen contents — sized in container units (cqh/cqw) to fit the bezel */
+  .screen { width: 100%; height: 100%; display: flex; flex-direction: column; padding: 4cqh 4cqw; gap: 1cqh; }
+  .screen-top { display: flex; justify-content: space-between; align-items: center; }
+  .screen-brand { display: flex; align-items: center; gap: 1cqw; font-size: 4.5cqh; letter-spacing: 0.18em; color: var(--dim); font-weight: 600; }
+  .screen-brand .mark { width: 1.2em; height: 1.2em; }
+  .pill {
+    font-size: 3.6cqh; padding: 0.6cqh 1.6cqw; border-radius: 999px; font-weight: 700; letter-spacing: 0.04em;
+  }
+  .pill.plan { background: #2b2420; color: var(--accent-2); border: 1px solid var(--edge); }
+  .pill.est { background: #322a1e; color: var(--warn); border: 1px solid #4a3d28; margin-left: 1cqw; }
+  .screen-rings { flex: 1; display: flex; align-items: center; justify-content: center; gap: 9cqw; min-height: 0; }
+  .gauge { position: relative; width: min(30cqw, 66cqh); aspect-ratio: 1; }
+  .gauge svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .gauge .track { stroke: #322a24; }
+  .gauge .val { stroke-linecap: round; }
+  .gc { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .gc .pct { font-size: 19cqh; font-weight: 800; line-height: 1; }
+  .gc .pct .u { font-size: 0.4em; color: var(--dim); }
+  .gc .sub { font-size: 3.6cqh; color: var(--dim-2); }
+  .ring-meta { text-align: center; margin-top: 1.5cqh; }
+  .ring-meta .lbl { font-size: 4.4cqh; font-weight: 600; }
+  .ring-meta .rst { font-size: 3.6cqh; color: var(--dim-2); }
+  .ring-meta .rst b { color: var(--accent-2); }
+  .ring-col { display: flex; flex-direction: column; align-items: center; }
+  .screen-foot { display: flex; justify-content: center; gap: 6cqw; padding-top: 2cqh; border-top: 1px solid #2a2320; }
+  .screen-foot .s { text-align: center; }
+  .screen-foot .s b { display: block; font-size: 5.2cqh; font-weight: 800; }
+  .screen-foot .s span { font-size: 2.8cqh; color: var(--dim-2); letter-spacing: 0.04em; text-transform: uppercase; }
+
+  /* generic cards */
+  .grid { display: grid; gap: 20px; }
+  .grid.two { grid-template-columns: 1fr 1fr; }
+  .grid.three { grid-template-columns: repeat(3, 1fr); }
+  @media (max-width: 760px) { .grid.two, .grid.three { grid-template-columns: 1fr; } }
+  .card {
+    background: linear-gradient(180deg, var(--card-2), var(--card));
+    border: 1px solid var(--edge); border-radius: var(--radius); padding: 24px;
+    position: relative; transition: transform 0.2s ease, border-color 0.2s ease;
+  }
+  .card:hover { transform: translateY(-3px); border-color: var(--accent); }
+  .card .ico { width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center; margin-bottom: 14px; background: #2b2420; border: 1px solid var(--edge); }
+  .card p { color: var(--dim); font-size: 15px; }
+
+  /* flow diagram */
+  .flow { margin-top: 36px; }
+  .flow svg { width: 100%; height: auto; display: block; }
+
+  /* steps */
+  .steps { display: grid; gap: 18px; margin-top: 32px; counter-reset: step; }
+  .step { display: grid; grid-template-columns: 48px 1fr; gap: 18px; align-items: start; }
+  .step .n {
+    counter-increment: step; width: 40px; height: 40px; border-radius: 12px;
+    display: grid; place-items: center; font-weight: 800; font-size: 17px;
+    background: linear-gradient(135deg, var(--accent), #b85a3c); color: #fff;
+    box-shadow: 0 8px 20px -8px var(--accent-glow);
+  }
+  .step .n::before { content: counter(step); }
+  .step .body { padding-top: 4px; }
+  .step h3 { margin-bottom: 6px; }
+  .step p { color: var(--dim); font-size: 15px; margin-bottom: 10px; }
+
+  pre {
+    background: #0c0a09; border: 1px solid var(--edge); border-radius: 12px;
+    padding: 16px 18px; overflow-x: auto; color: #e6ddd4; line-height: 1.7;
+  }
+  pre .c { color: var(--dim-2); }
+  pre .k { color: var(--accent-2); }
+  pre .s { color: var(--ok); }
+  code.inline { background: var(--card-2); border: 1px solid var(--edge); padding: 2px 7px; border-radius: 6px; color: var(--accent-2); }
+
+  /* comparison */
+  .vs { position: relative; }
+  .src-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .src-head .tag { font-family: var(--mono); font-size: 13px; padding: 4px 10px; border-radius: 8px; background: #0c0a09; border: 1px solid var(--edge); }
+  .b-official { color: var(--ok); border-color: #2f4438 !important; }
+  .b-estimated { color: var(--warn); border-color: #4a3d28 !important; }
+  .plist { list-style: none; display: grid; gap: 9px; margin-top: 6px; }
+  .plist li { display: grid; grid-template-columns: 22px 1fr; gap: 8px; font-size: 14.5px; color: var(--dim); }
+  .plist .pro { color: var(--ok); font-weight: 700; }
+  .plist .con { color: var(--crit); font-weight: 700; }
+  .recommend { position: absolute; top: -11px; right: 18px; font-size: 11px; font-weight: 700; letter-spacing: 0.05em; background: var(--accent); color: #fff; padding: 4px 10px; border-radius: 999px; }
+
+  /* table */
+  table { width: 100%; border-collapse: collapse; margin-top: 24px; font-size: 14.5px; }
+  th, td { text-align: left; padding: 13px 16px; border-bottom: 1px solid var(--edge-soft); vertical-align: top; }
+  th { color: var(--dim-2); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; }
+  td code { color: var(--accent-2); }
+  tr:hover td { background: rgba(217,119,87,0.04); }
+
+  /* troubleshoot */
+  .tlist { display: grid; gap: 12px; margin-top: 28px; }
+  .titem { display: grid; grid-template-columns: 26px 1fr; gap: 12px; background: var(--card); border: 1px solid var(--edge-soft); border-radius: 12px; padding: 16px 18px; }
+  .titem .q { font-weight: 700; }
+  .titem .a { color: var(--dim); font-size: 14.5px; margin-top: 3px; }
+  .titem .ix { color: var(--warn); font-size: 18px; line-height: 1.3; }
+
+  footer { padding: 50px 0 70px; border-top: 1px solid var(--edge-soft); color: var(--dim-2); font-size: 14px; }
+  footer .srcs { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 12px; }
+</style>
+</head>
+<body>
+
+<!-- shared SVG defs: the Claude spark mark -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <g id="spark">
+      <g stroke="currentColor" stroke-width="11" stroke-linecap="round">
+        <line x1="50" y1="10" x2="50" y2="90"/><line x1="10" y1="50" x2="90" y2="50"/>
+        <line x1="21.7" y1="21.7" x2="78.3" y2="78.3"/><line x1="78.3" y1="21.7" x2="21.7" y2="78.3"/>
+      </g>
+    </g>
+    <linearGradient id="coral" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#e89b80"/><stop offset="1" stop-color="#d97757"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<nav>
+  <div class="wrap">
+    <div class="logo"><svg class="mark" viewBox="0 0 100 100" style="color:var(--accent)"><use href="#spark"/></svg> Claude&nbsp;Usage</div>
+    <div class="navlinks">
+      <a href="#how">How it works</a>
+      <a href="#sources">Data source</a>
+      <a href="#start">Quick start</a>
+      <a href="#config">Config</a>
+      <a href="#help">Troubleshoot</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <div class="badges" style="margin-bottom:22px">
+        <span class="badge"><span class="dot"></span> Corsair Xeneon Edge</span>
+        <span class="badge ok"><span class="dot"></span> iCUE 5.44+</span>
+      </div>
+      <h1>Your Claude usage,<br><span class="grad">live on your desk.</span></h1>
+      <p>A custom widget for the CORSAIR Xeneon Edge that shows your 5-hour session
+        and weekly limits as glanceable rings — with reset countdowns, tokens,
+        cost and burn rate.</p>
+      <div class="badges">
+        <span class="badge"><span class="dot"></span> 5-hour &amp; weekly rings</span>
+        <span class="badge"><span class="dot"></span> Live reset timers</span>
+        <span class="badge warn"><span class="dot"></span> Official or local data</span>
+      </div>
+    </div>
+
+    <!-- live widget mockup -->
+    <div class="device">
+      <div class="bezel">
+        <div class="screen">
+          <div class="screen-top">
+            <div class="screen-brand"><svg class="mark" viewBox="0 0 100 100" style="color:var(--accent)"><use href="#spark"/></svg> CLAUDE USAGE</div>
+            <div><span class="pill plan">Max 20x</span><span class="pill est">ESTIMATED</span></div>
+          </div>
+          <div class="screen-rings">
+            <div class="ring-col">
+              <div class="gauge">
+                <svg viewBox="0 0 200 200">
+                  <circle class="track" cx="100" cy="100" r="80" fill="none" stroke-width="16"/>
+                  <circle class="val" cx="100" cy="100" r="80" fill="none" stroke-width="16" stroke="url(#coral)" stroke-dasharray="502.6" stroke-dashoffset="432" style="animation:fill1 1.4s ease forwards"/>
+                </svg>
+                <div class="gc"><span class="pct">14<span class="u">%</span></span><span class="sub">45.9M / 321.8M</span></div>
+              </div>
+              <div class="ring-meta"><div class="lbl">5-Hour Session</div><div class="rst">resets in <b>2h 51m</b></div></div>
+            </div>
+            <div class="ring-col">
+              <div class="gauge">
+                <svg viewBox="0 0 200 200">
+                  <circle class="track" cx="100" cy="100" r="80" fill="none" stroke-width="16"/>
+                  <circle class="val" cx="100" cy="100" r="80" fill="none" stroke-width="16" stroke="url(#coral)" stroke-dasharray="502.6" stroke-dashoffset="352" style="animation:fill2 1.6s ease forwards"/>
+                </svg>
+                <div class="gc"><span class="pct">30<span class="u">%</span></span><span class="sub">weekly</span></div>
+              </div>
+              <div class="ring-meta"><div class="lbl">Weekly</div><div class="rst">resets in <b>4d 6h</b></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="stand"></div>
+      <div class="caption">2560 × 720 · 32:9 · rendered on-device</div>
+    </div>
+  </div>
+</header>
+<style>
+  @keyframes fill1 { from { stroke-dashoffset: 502.6; } to { stroke-dashoffset: 432; } }
+  @keyframes fill2 { from { stroke-dashoffset: 502.6; } to { stroke-dashoffset: 352; } }
+</style>
+
+<!-- HOW IT WORKS -->
+<section id="how">
+  <div class="wrap">
+    <div class="eyebrow">Architecture</div>
+    <h2>How it works</h2>
+    <p class="lead">A widget on the Edge is sandboxed HTML — it can't read your Claude logs or token
+      directly. So a tiny local collector gathers the data and serves it over localhost; the widget just draws it.</p>
+
+    <div class="flow">
+      <svg viewBox="0 0 1040 280" role="img" aria-label="Data flow from collector to widget">
+        <defs>
+          <marker id="arrow" markerWidth="12" markerHeight="12" refX="8" refY="4" orient="auto">
+            <path d="M0,0 L8,4 L0,8 Z" fill="#d97757"/>
+          </marker>
+        </defs>
+
+        <!-- source box -->
+        <rect x="20" y="70" width="250" height="140" rx="16" fill="#1f1a16" stroke="#352c25"/>
+        <text x="145" y="58" text-anchor="middle" fill="#8a7d70" font-family="sans-serif" font-size="13" letter-spacing="2">DATA SOURCE</text>
+        <text x="145" y="118" text-anchor="middle" fill="#f4efe9" font-family="sans-serif" font-size="17" font-weight="700">ccusage logs</text>
+        <text x="145" y="142" text-anchor="middle" fill="#8a7d70" font-family="sans-serif" font-size="13">— or —</text>
+        <text x="145" y="166" text-anchor="middle" fill="#f4efe9" font-family="sans-serif" font-size="17" font-weight="700">/api/oauth/usage</text>
+
+        <!-- collector box -->
+        <rect x="395" y="55" width="250" height="170" rx="16" fill="#231d18" stroke="#d97757"/>
+        <g transform="translate(495,82)"><svg width="30" height="30" viewBox="0 0 100 100" style="color:#d97757"><use href="#spark"/></svg></g>
+        <text x="520" y="150" text-anchor="middle" fill="#f4efe9" font-family="sans-serif" font-size="18" font-weight="700">Collector</text>
+        <text x="520" y="174" text-anchor="middle" fill="#b3a698" font-family="monospace" font-size="13">node server.js</text>
+        <text x="520" y="198" text-anchor="middle" fill="#8a7d70" font-family="sans-serif" font-size="12">polls every 3 min</text>
+
+        <!-- widget / device box -->
+        <rect x="770" y="70" width="250" height="140" rx="16" fill="#1f1a16" stroke="#352c25"/>
+        <rect x="792" y="95" width="206" height="58" rx="6" fill="#100d0b" stroke="#000"/>
+        <circle cx="838" cy="124" r="17" fill="none" stroke="#322a24" stroke-width="5"/>
+        <circle cx="838" cy="124" r="17" fill="none" stroke="#d97757" stroke-width="5" stroke-dasharray="107" stroke-dashoffset="80" transform="rotate(-90 838 124)"/>
+        <circle cx="895" cy="124" r="17" fill="none" stroke="#322a24" stroke-width="5"/>
+        <circle cx="895" cy="124" r="17" fill="none" stroke="#d97757" stroke-width="5" stroke-dasharray="107" stroke-dashoffset="70" transform="rotate(-90 895 124)"/>
+        <text x="895" y="185" text-anchor="middle" fill="#f4efe9" font-family="sans-serif" font-size="17" font-weight="700">Xeneon Edge</text>
+
+        <!-- arrows -->
+        <line x1="272" y1="140" x2="388" y2="140" stroke="#d97757" stroke-width="2.5" marker-end="url(#arrow)"/>
+        <line x1="647" y1="140" x2="763" y2="140" stroke="#d97757" stroke-width="2.5" marker-end="url(#arrow)"/>
+        <text x="705" y="128" text-anchor="middle" fill="#b3a698" font-family="monospace" font-size="12">127.0.0.1:8787</text>
+        <text x="705" y="162" text-anchor="middle" fill="#8a7d70" font-family="monospace" font-size="11">/usage.json</text>
+      </svg>
+    </div>
+
+    <div class="grid three" style="margin-top:20px">
+      <div class="card">
+        <div class="ico">📡</div>
+        <h3>Collector</h3>
+        <p>A small Node server polls your usage and exposes a normalized <code class="inline">usage.json</code> on localhost — and can serve the widget itself.</p>
+      </div>
+      <div class="card">
+        <div class="ico">🎯</div>
+        <h3>Widget</h3>
+        <p>Responsive HTML/CSS/JS rendered in iCUE's Chromium engine. Fetches the JSON and animates the rings + countdowns.</p>
+      </div>
+      <div class="card">
+        <div class="ico">🔌</div>
+        <h3>Pluggable</h3>
+        <p>Flip one config value to switch between fully-local estimates and Anthropic's exact official numbers.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DATA SOURCE -->
+<section id="sources">
+  <div class="wrap">
+    <div class="eyebrow">Pick your data</div>
+    <h2>Two ways to feed the rings</h2>
+    <p class="lead">Both are built in. The widget badge always tells you which you're seeing —
+      <b style="color:var(--ok)">OFFICIAL</b> or <b style="color:var(--warn)">ESTIMATED</b>.</p>
+
+    <div class="grid two" style="margin-top:34px">
+      <div class="card vs">
+        <span class="recommend">No setup</span>
+        <div class="src-head">
+          <h3>ccusage <span style="color:var(--dim-2);font-weight:400">· default</span></h3>
+          <span class="tag b-estimated">ESTIMATED</span>
+        </div>
+        <p>Reads your own Claude Code logs locally via the <a href="https://github.com/ryoppippi/ccusage">ccusage</a> tool.</p>
+        <ul class="plist">
+          <li><span class="pro">✓</span> 100% local — no token handling, no ToS concern</li>
+          <li><span class="pro">✓</span> Tokens, cost, 5h block + reset, burn rate, projection</li>
+          <li><span class="con">✕</span> % is estimated against a token budget</li>
+          <li><span class="con">✕</span> No official weekly reset time</li>
+        </ul>
+      </div>
+
+      <div class="card vs">
+        <span class="recommend" style="background:var(--ok)">Exact</span>
+        <div class="src-head">
+          <h3>oauth <span style="color:var(--dim-2);font-weight:400">· flip a flag</span></h3>
+          <span class="tag b-official">OFFICIAL</span>
+        </div>
+        <p>Calls Anthropic's <code class="inline">/api/oauth/usage</code> — same numbers as <code class="inline">/usage</code>.</p>
+        <ul class="plist">
+          <li><span class="pro">✓</span> Exact 5h %, weekly %, per-model Opus/Sonnet</li>
+          <li><span class="pro">✓</span> Official reset timestamps</li>
+          <li><span class="con">✕</span> Undocumented endpoint; sends a Claude&nbsp;Code User-Agent (mild gray area)</li>
+          <li><span class="con">✕</span> Reads your local OAuth token; poll ≥&nbsp;180s</li>
+        </ul>
+      </div>
+    </div>
+
+    <pre style="margin-top:24px"><span class="c">// collector/config.json — switch any time, then restart</span>
+{ <span class="k">"provider"</span>: <span class="s">"ccusage"</span>   <span class="c">// or "oauth"</span> }</pre>
+  </div>
+</section>
+
+<!-- QUICK START -->
+<section id="start">
+  <div class="wrap">
+    <div class="eyebrow">Get running</div>
+    <h2>Quick start</h2>
+    <p class="lead">Default provider is <code class="inline">ccusage</code>, so there's nothing to configure. Two steps to pixels on glass.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="n"></div>
+        <div class="body">
+          <h3>Start the collector</h3>
+          <p>Leave it running (or auto-start it at login — see below).</p>
+          <pre>powershell -ExecutionPolicy Bypass -File scripts\start-collector.ps1</pre>
+        </div>
+      </div>
+      <div class="step">
+        <div class="n"></div>
+        <div class="body">
+          <h3>Add it to your dashboard</h3>
+          <p>Easiest path, zero packaging — add an <b>iFrame widget</b> in iCUE and point it at:</p>
+          <pre><span class="k">http://127.0.0.1:8787/</span></pre>
+        </div>
+      </div>
+      <div class="step">
+        <div class="n"></div>
+        <div class="body">
+          <h3>(Optional) Install as a real .icuewidget</h3>
+          <p>Builds <code class="inline">Claude-Usage.icuewidget</code>, then import in iCUE via <b>Widgets → “+”</b>.</p>
+          <pre>powershell -ExecutionPolicy Bypass -File scripts\pack.ps1</pre>
+        </div>
+      </div>
+      <div class="step">
+        <div class="n"></div>
+        <div class="body">
+          <h3>(Optional) Run automatically at login</h3>
+          <p>Adds a hidden launcher to your Startup folder (no admin) so the collector starts at login and the widget always has data.</p>
+          <pre>powershell -ExecutionPolicy Bypass -File scripts\install-startup.ps1
+<span class="c"># remove with: install-startup.ps1 -Remove</span></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CONFIG -->
+<section id="config">
+  <div class="wrap">
+    <div class="eyebrow">Reference</div>
+    <h2>Configuration</h2>
+    <p class="lead">Everything lives in <code class="inline">collector/config.json</code>.</p>
+    <table>
+      <thead><tr><th>Key</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>provider</code></td><td><code>"ccusage"</code> or <code>"oauth"</code>.</td></tr>
+        <tr><td><code>port</code></td><td>Default <code>8787</code>. If changed, update the iFrame URL and re-pack the widget.</td></tr>
+        <tr><td><code>refreshSeconds</code></td><td>Keep <b>≥ 180</b> for <code>oauth</code> — the endpoint rate-limits harder below that.</td></tr>
+        <tr><td><code>plan.blockTokenLimit</code></td><td>Fixed denominator for the 5h ring; else uses your largest previous 5h block.</td></tr>
+        <tr><td><code>plan.weeklyTokenBudget</code></td><td>Set a number to turn the weekly ring into a % in <code>ccusage</code> mode.</td></tr>
+        <tr><td><code>oauth.manualToken</code> / <code>tokenEnvVar</code> / <code>credentialsPath</code></td><td>Token sources. Auto-detects <code>~/.claude/.credentials.json</code>.</td></tr>
+        <tr><td><code>oauth.userAgentVersion</code></td><td>The <code>claude-code/&lt;version&gt;</code> string sent upstream.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- TROUBLESHOOT -->
+<section id="help">
+  <div class="wrap">
+    <div class="eyebrow">When something's off</div>
+    <h2>Troubleshooting</h2>
+    <div class="tlist">
+      <div class="titem"><div class="ix">⚠</div><div><div class="q">Widget says “Collector unreachable”</div><div class="a">The collector isn't running or the port differs. Start it and check <code class="inline">http://127.0.0.1:8787/health</code>.</div></div></div>
+      <div class="titem"><div class="ix">⚠</div><div><div class="q">iFrame widget is blank</div><div class="a">Confirm the URL is exactly <code class="inline">http://127.0.0.1:8787/</code> — http, not https.</div></div></div>
+      <div class="titem"><div class="ix">⚠</div><div><div class="q">oauth shows 401</div><div class="a">Token expired — run any Claude Code command to refresh it.</div></div></div>
+      <div class="titem"><div class="ix">⚠</div><div><div class="q">oauth shows 429</div><div class="a">Raise <code class="inline">refreshSeconds</code> to ≥ 180.</div></div></div>
+      <div class="titem"><div class="ix">⚠</div><div><div class="q">Cost numbers look huge</div><div class="a">ccusage reports <i>API-equivalent</i> cost, not what your subscription actually bills.</div></div></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="logo" style="margin-bottom:6px"><svg class="mark" viewBox="0 0 100 100" style="color:var(--accent)"><use href="#spark"/></svg> Claude Usage Widget</div>
+    Built for the CORSAIR Xeneon Edge · responsive to any dashboard tile.
+    <div class="srcs">
+      <a href="https://docs.elgato.com/icue/widgets/">iCUE widget docs</a>
+      <a href="https://www.corsair.com/us/en/explorer/diy-builder/accessories/xeneon-edge-widgets-explained/">Xeneon Edge widgets</a>
+      <a href="https://github.com/ryoppippi/ccusage">ccusage</a>
+      <a href="https://github.com/Maciek-roboblog/Claude-Code-Usage-Monitor/issues/202">OAuth usage schema</a>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

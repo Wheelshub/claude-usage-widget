@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Claude Code · Usage</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div id="app" class="app" data-state="loading">
+      <!-- header: brand + live date/clock -->
+      <header class="hdr">
+        <div class="hdr-brand">
+          <span class="spark" aria-hidden="true"></span>
+          <div class="hdr-title">
+            <div class="t1">CLAUDE&nbsp;CODE</div>
+            <div class="t2">usage&nbsp;monitor</div>
+          </div>
+        </div>
+        <div id="date" class="hdr-date">— — —</div>
+        <div id="clock" class="clock">--:--:--</div>
+      </header>
+
+      <div class="subbar">
+        <span id="plan" class="pill pill-plan"></span>
+        <span id="source" class="pill pill-source"></span>
+        <span id="updated" class="updated"></span>
+      </div>
+
+      <!-- left: stacked gauges (2/3) · right: stat tiles 2x4 (1/3) -->
+      <div class="body">
+        <main id="gauges" class="gauges"></main>
+        <section id="panel" class="panel"></section>
+      </div>
+
+      <div id="banner" class="banner" hidden></div>
+
+      <!-- claude-code style status line -->
+      <footer id="statusline" class="statusline"></footer>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>

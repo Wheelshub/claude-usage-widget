@@ -1,0 +1,14 @@
+{
+  "name": "claude-usage-collector",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Local data collector that feeds Claude usage to the Xeneon Edge widget.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "once": "node -e \"require('./providers/'+(require('./config.json').provider==='oauth'?'oauth':'ccusage')).collect(require('./config.json')).then(d=>console.log(JSON.stringify(d,null,2))).catch(e=>{console.error(e.message);process.exit(1)})\""
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
